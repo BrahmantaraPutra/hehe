@@ -122,8 +122,8 @@
   /* ===== SETTINGS ===== */
   const RESULT_GIF_URL = "https://tenor.com/embed/17039269763683860875";
   const GROW_STEP = 14; // font size added to the "Yes" button on every "No" click
-  const EMAIL_TO = "brahmantaraputraw@gmail.com";
-  const EMAIL_ENDPOINT = "https://formsubmit.co/" + EMAIL_TO;
+  const WEB3FORMS_KEY = "9a39c703-fb1b-4b67-8daa-edd7e1811cc9";
+  const EMAIL_ENDPOINT = "https://api.web3forms.com/submit";
 
   const NO_TEXTS = [
     "No",
@@ -146,40 +146,24 @@
   let noClicks = 0;
 
   // Send the answer to the email address (fire and forget, never blocks the UI)
-  // Uses a hidden form posted into a hidden iframe, which is not subject to CORS
   function sendAnswer() {
     const time = new Date().toLocaleString("en-GB", { timeZone: "Asia/Jakarta" });
-    const fields = {
-      _subject: "She/He answered YES!",
-      _captcha: "false",
-      _template: "table",
-      answer: "YES",
-      question: document.getElementById("questionText").textContent,
-      times_no_was_clicked: String(noClicks),
-      answered_at_WIB: time
-    };
-
-    const iframe = document.createElement("iframe");
-    iframe.name = "mailTarget";
-    iframe.style.display = "none";
-    document.body.appendChild(iframe);
-
-    const form = document.createElement("form");
-    form.method = "POST";
-    form.action = EMAIL_ENDPOINT;
-    form.target = "mailTarget";
-    form.style.display = "none";
-
-    for (const [name, value] of Object.entries(fields)) {
-      const input = document.createElement("input");
-      input.type = "hidden";
-      input.name = name;
-      input.value = value;
-      form.appendChild(input);
-    }
-
-    document.body.appendChild(form);
-    form.submit();
+    fetch(EMAIL_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Accept": "application/json" },
+      body: JSON.stringify({
+        access_key: WEB3FORMS_KEY,
+        subject: "She/He answered YES!",
+        from_name: "Question Page",
+        answer: "YES",
+        question: document.getElementById("questionText").textContent,
+        times_no_was_clicked: noClicks,
+        answered_at_WIB: time
+      })
+    })
+      .then((res) => res.json())
+      .then((data) => console.log("Email status:", data.success ? "sent" : data.message))
+      .catch((err) => console.log("Email error:", err));
   }
 
   noBtn.addEventListener("click", () => {
