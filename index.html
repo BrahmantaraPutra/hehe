@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>An Important Question</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    min-height: 100vh;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: linear-gradient(135deg, #ffffff, #ffffff 50%, #ffffff);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow-x: hidden;
+  }
+
+  .card {
+    width: 100%;
+    max-width: 480px;
+    padding: 24px 20px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .gif-frame {
+    width: 100%;
+    max-width: 300px;
+    height: 300px;
+    border: none;
+    border-radius: 16px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    background: #fff;
+  }
+
+  h1 {
+    font-size: 1.6rem;
+    color: #4a1a2c;
+    line-height: 1.3;
+  }
+
+  .answers {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+  }
+
+  button {
+    border: none;
+    cursor: pointer;
+    font-weight: 700;
+    border-radius: 12px;
+    transition: all 0.25s ease;
+  }
+
+  #yesBtn {
+    background: #22c55e;
+    color: #fff;
+    font-size: 18px;
+    padding: 12px 36px;
+    max-width: 100%;
+  }
+  #yesBtn:hover { background: #16a34a; }
+
+  #yesBtn.fullscreen {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    border-radius: 0;
+    z-index: 999;
+    font-size: 15vmin;
+  }
+
+  #noBtn {
+    background: #ef4444;
+    color: #fff;
+    font-size: 16px;
+    padding: 10px 28px;
+  }
+  #noBtn:hover { background: #dc2626; }
+
+  #result { display: none; }
+  #result h1 { font-size: 2rem; }
+  #result p { color: #4a1a2c; margin-top: 8px; font-size: 1.1rem; }
+</style>
+</head>
+<body>
+
+<div class="card">
+
+  <!-- Question view -->
+  <div id="question" class="card" style="padding:0">
+    <iframe class="gif-frame" src="https://tenor.com/embed/25133943"
+            allowfullscreen title="Question GIF"></iframe>
+
+    <h1 id="questionText">Can i be your BF?</h1>
+
+    <div class="answers">
+      <button id="yesBtn">Yes</button>
+      <button id="noBtn">No</button>
+    </div>
+  </div>
+
+  <!-- Result view (shown after clicking "Yes") -->
+  <div id="result" class="card" style="padding:0">
+    <iframe id="resultFrame" class="gif-frame" allowfullscreen title="Celebration GIF"></iframe>
+    <h1>Yeayyyyy!</h1>
+    <p>So.. we're officially a couple nowwwwww..??!</p>
+  </div>
+
+</div>
+
+<script>
+  /* ===== SETTINGS ===== */
+  const RESULT_GIF_URL = "https://tenor.com/embed/17039269763683860875";
+  const GROW_STEP = 14; // font size added to the "Yes" button on every "No" click
+  const EMAIL_TO = "brahmantaraputraw@gmail.com";
+  const EMAIL_ENDPOINT = "https://formsubmit.co/ajax/" + EMAIL_TO;
+
+  const NO_TEXTS = [
+    "No",
+    "Are you sure?",
+    "Think again...",
+    "Really?",
+    "Please...",
+    "You're breaking my heart",
+    "Don't do this to me...",
+    "Just press Yes?"
+  ];
+  /* ==================== */
+
+  const yesBtn = document.getElementById("yesBtn");
+  const noBtn = document.getElementById("noBtn");
+  const questionBox = document.getElementById("question");
+  const resultBox = document.getElementById("result");
+  const resultFrame = document.getElementById("resultFrame");
+
+  let noClicks = 0;
+
+  // Send the answer to the email address (fire and forget, never blocks the UI)
+  function sendAnswer() {
+    const time = new Date().toLocaleString("en-GB", { timeZone: "Asia/Jakarta" });
+    fetch(EMAIL_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Accept": "application/json" },
+      body: JSON.stringify({
+        _subject: "She/He answered YES!",
+        _captcha: "false",
+        _template: "table",
+        answer: "YES",
+        question: document.getElementById("questionText").textContent,
+        times_no_was_clicked: noClicks,
+        answered_at_WIB: time
+      })
+    }).catch(() => { /* ignore network errors */ });
+  }
+
+  noBtn.addEventListener("click", () => {
+    noClicks++;
+
+    noBtn.textContent = NO_TEXTS[Math.min(noClicks, NO_TEXTS.length - 1)];
+
+    const fontSize = 18 + noClicks * GROW_STEP;
+    yesBtn.style.fontSize = fontSize + "px";
+    yesBtn.style.padding = (12 + noClicks * 6) + "px " + (36 + noClicks * 10) + "px";
+
+    // Once the button nearly fills the screen, make it cover everything
+    const rect = yesBtn.getBoundingClientRect();
+    if (rect.width >= window.innerWidth * 0.85 || rect.height >= window.innerHeight * 0.6) {
+      yesBtn.classList.add("fullscreen");
+      yesBtn.removeAttribute("style");
+    }
+  });
+
+  yesBtn.addEventListener("click", () => {
+    yesBtn.classList.remove("fullscreen");
+    questionBox.style.display = "none";
+    resultFrame.src = RESULT_GIF_URL;
+    resultBox.style.display = "flex";
+    sendAnswer();
+  });
+</script>
+
+</body>
+</html>
